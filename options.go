@@ -22,6 +22,7 @@ type logOptions struct {
 	writer         io.Writer
 	output         Output
 	ctxExt         func(ctx context.Context) []interface{}
+	ctxMapExt      func(ctx context.Context) map[string]string
 	ctxTraceExt    func(ctx context.Context) string
 }
 
@@ -98,7 +99,7 @@ func WithFilePath(enabled bool) Option {
 	}
 }
 
-// WithFilePath sets whether the file path is logged or not.
+// WithFuncPath sets whether the func path is logged or not.
 func WithFuncPath(enabled bool) Option {
 	return func(opts *logOptions) {
 		opts.funcPath = enabled
@@ -132,13 +133,33 @@ func WithLevel(level Level) Option {
 	}
 }
 
-// WithCtxExtractor allows setting up of a function to extract values from the context.
+// Deprecated: use WithCtxMapExtractor instead.
+//
+// WithCtxExtractor allows setting up a function to extract values from the context as an array.
 func WithCtxExtractor(fn func(ctx context.Context) []interface{}) Option {
 	return func(opts *logOptions) {
 		parent := opts.ctxExt
 		opts.ctxExt = func(ctx context.Context) []interface{} {
 			if parent != nil {
 				return append(parent(ctx), fn(ctx)...)
+			}
+
+			return fn(ctx)
+		}
+	}
+}
+
+// WithCtxMapExtractor allows setting up a function to extract values from the context as a key:value map.
+func WithCtxMapExtractor(fn func(ctx context.Context) map[string]string) Option {
+	return func(opts *logOptions) {
+		parentExt := opts.ctxMapExt
+		opts.ctxMapExt = func(ctx context.Context) map[string]string {
+			if parentExt != nil {
+				parentMap := parentExt(ctx)
+				for key, val := range fn(ctx) {
+					parentMap[key] = val
+				}
+				return parentMap
 			}
 
 			return fn(ctx)

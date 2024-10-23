@@ -2,6 +2,7 @@ package log_test
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"testing"
 
@@ -18,6 +19,7 @@ func BenchmarkZLBaseline(b *testing.B) {
 		Logger()
 	var msg interface{} = "message"
 	b.ResetTimer()
+	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			logger.Error().Msgf("%s", msg)
@@ -35,6 +37,7 @@ func BenchmarkZLBaselineWithCaller(b *testing.B) {
 		Logger()
 	var msg interface{} = "message"
 	b.ResetTimer()
+	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			logger.Error().Msgf("%s", msg)
@@ -51,6 +54,7 @@ func BenchmarkJsonPrint(b *testing.B) {
 		log.WithLevel(log.DEBUG),
 	)
 	b.ResetTimer()
+	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			logger.Print("message")
@@ -85,6 +89,7 @@ func BenchmarkJsonLoggers(b *testing.B) {
 		b.Run(c.name, func(b *testing.B) {
 			logger := baseLogger.Log(c.cfs...)
 			b.ResetTimer()
+			b.ReportAllocs()
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
 					logger.Error("message")
@@ -102,6 +107,7 @@ func BenchmarkJsonLogInfo(b *testing.B) {
 		log.WithFilePath(false),
 		log.WithColors(false)).Log()
 	b.ResetTimer()
+	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			lg.Info(testLog)
@@ -117,6 +123,7 @@ func BenchmarkJsonLogInfoFilePath(b *testing.B) {
 		log.WithFilePath(true),
 		log.WithColors(false)).Log()
 	b.ResetTimer()
+	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			lg.Info(testLog)
@@ -133,6 +140,7 @@ func BenchmarkJsonInfoContext(b *testing.B) {
 		log.WithColors(false)).Log()
 	ctx := context.Background()
 	b.ResetTimer()
+	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			lg.InfoContext(ctx, testLog)
@@ -141,22 +149,72 @@ func BenchmarkJsonInfoContext(b *testing.B) {
 }
 
 func BenchmarkJsonInfoContextExt(b *testing.B) {
-	ctx1 := context.WithValue(context.Background(), `ctx1`, `ctx one value`)
-	ctx2 := context.WithValue(ctx1, `ctx2`, `ctx two value`)
+	ctx1 := context.WithValue(context.Background(), `ctx1`, `ctx 1 value`)
+	for i := 2; i <= 10; i++ {
+		ctx1 = context.WithValue(ctx1, fmt.Sprintf(`ctx%d`, i), fmt.Sprintf(`ctx %d value`, i))
+	}
 	lg := log.NewLog(
 		log.WithLevel(log.INFO),
 		log.WithStdOut(ioutil.Discard),
 		log.WithFilePath(false),
 		log.WithOutput(log.OutJson),
 		log.WithCtxExtractor(func(ctx context.Context) []interface{} {
-			return []interface{}{ctx.Value(`ctx1`), ctx.Value(`ctx2`)}
+			return []interface{}{
+				"ctx1: " + ctx.Value(`ctx1`).(string),
+				"ctx2: " + ctx.Value(`ctx2`).(string),
+				"ctx3: " + ctx.Value(`ctx3`).(string),
+				"ctx4: " + ctx.Value(`ctx4`).(string),
+				"ctx5: " + ctx.Value(`ctx5`).(string),
+				"ctx6: " + ctx.Value(`ctx6`).(string),
+				"ctx7: " + ctx.Value(`ctx7`).(string),
+				"ctx8: " + ctx.Value(`ctx8`).(string),
+				"ctx9: " + ctx.Value(`ctx9`).(string),
+				"ctx10: " + ctx.Value(`ctx10`).(string),
+			}
 		}),
 		log.WithColors(false)).Log()
 
 	b.ResetTimer()
+	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			lg.InfoContext(ctx2, testLog)
+			lg.InfoContext(ctx1, testLog)
+		}
+	})
+}
+
+func BenchmarkJsonInfoContextMapExt(b *testing.B) {
+	ctx1 := context.WithValue(context.Background(), `ctx1`, `ctx 1 value`)
+	for i := 2; i <= 10; i++ {
+		ctx1 = context.WithValue(ctx1, fmt.Sprintf(`ctx%d`, i), fmt.Sprintf(`ctx %d value`, i))
+	}
+
+	lg := log.NewLog(
+		log.WithLevel(log.INFO),
+		log.WithStdOut(ioutil.Discard),
+		log.WithFilePath(false),
+		log.WithOutput(log.OutJson),
+		log.WithCtxMapExtractor(func(ctx context.Context) map[string]string {
+			return map[string]string{
+				`ctx1`:  ctx.Value(`ctx1`).(string),
+				`ctx2`:  ctx.Value(`ctx2`).(string),
+				`ctx3`:  ctx.Value(`ctx3`).(string),
+				`ctx4`:  ctx.Value(`ctx4`).(string),
+				`ctx5`:  ctx.Value(`ctx5`).(string),
+				`ctx6`:  ctx.Value(`ctx6`).(string),
+				`ctx7`:  ctx.Value(`ctx7`).(string),
+				`ctx8`:  ctx.Value(`ctx8`).(string),
+				`ctx9`:  ctx.Value(`ctx9`).(string),
+				`ctx10`: ctx.Value(`ctx10`).(string),
+			}
+		}),
+		log.WithColors(false)).Log()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			lg.InfoContext(ctx1, testLog)
 		}
 	})
 }
@@ -170,6 +228,7 @@ func BenchmarkJsonInfoParams(b *testing.B) {
 		log.WithColors(false)).Log()
 	ctx := context.Background()
 	b.ResetTimer()
+	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			lg.InfoContext(ctx, testLog, `parm1`, `parm2`, `parm3`, `parm4`)

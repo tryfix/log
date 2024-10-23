@@ -65,22 +65,10 @@ func main() {
 	prefixedLogger.Error(`module.sub-module`, `message`)
 	prefixedLogger.Error(`module.sub-module`, `message`, `param1`, `param2`)
 
-	// custom logger
-	//customLogger := customLog.NewLogger()
-	//customLogger.Info(`info`)
-	//customLogger.Trace(`trace`)
-	//
-	//// create a logger instance derived from logger
-	//nestedLogger := logger.NewLog(log.WithLevel(log.TRACE), log.Prefixed(`level-2`))
-	//nestedLogger.Error(`error happened`, 22)
-
 	// enable context reading
 	// keys
-	type keyOne string
-	type keyTwo string
-
-	const k1 keyOne = "key1"
-	const k2 keyTwo = "key2"
+	const k1 = "key1"
+	const k2 = "key2"
 
 	// get details from context
 	lCtx := context.Background()
@@ -96,11 +84,16 @@ func main() {
 				fmt.Sprintf("%s: %+v", k1, ctx.Value(k1)),
 			}
 		}),
+		log.WithCtxMapExtractor(func(ctx context.Context) map[string]string {
+			return map[string]string{
+				k1 + `mp`: ctx.Value(k1).(string),
+				k2 + `mp`: ctx.Value(k2).(string),
+			}
+		}),
 	)
 
+	ctxLogger.ErrorContext(lCtx, `message`)
 	ctxLogger.ErrorContext(lCtx, `message`, `param1`, `param2`)
-	ctxLogger.ErrorContext(lCtx, `message`)
-	ctxLogger.ErrorContext(lCtx, `message`)
 	ctxLogger.ErrorContext(lCtx, log.WithPrefix(`prefix`, `message`))
 	ctxLogger.WarnContext(lCtx, log.WithPrefix(`prefix`, `message`), `param1`, `param2`)
 
@@ -118,4 +111,6 @@ func main() {
 	ctxChildLogger.ErrorContext(lCtx, `message`)
 	ctxChildLogger.ErrorContext(lCtx, log.WithPrefix(`prefix`, `message`))
 	ctxChildLogger.WarnContext(lCtx, log.WithPrefix(`prefix`, `message`), `param1`, `param2`)
+	ctxChildLogger.Println(`param1`, `param2`)
+	ctxChildLogger.Print(`param1`, `param2`)
 }

@@ -82,11 +82,8 @@ func main() {
 
 	// enable context reading
 	// keys
-	type keyOne string
-	type keyTwo string
-
-	const k1 keyOne = "key1"
-	const k2 keyTwo = "key2"
+	const k1 string = "key1"
+	const k2 string = "key2"
 
 	// get details from context
 	lCtx := context.Background()
@@ -113,6 +110,11 @@ func main() {
 		log.WithCtxExtractor(func(ctx context.Context) []interface{} {
 			return []interface{}{
 				fmt.Sprintf("%s: %+v", k2, ctx.Value(k2)),
+			}
+		}),
+		log.WithCtxMapExtractor(func(ctx context.Context) map[string]string {
+			return map[string]string{
+				k2: ctx.Value(k2).(string),
 			}
 		}),
 	)

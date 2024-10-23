@@ -77,7 +77,12 @@ func (l *jsonLogParser) withExtractedTrace(ctx context.Context, event *zerolog.E
 func (l *jsonLogParser) withExtractedCtx(ctx context.Context, event *zerolog.Event) *zerolog.Event {
 	if l.ctxExt != nil {
 		if ctxData := l.ctxExt(ctx); len(ctxData) > 0 {
-			return event.Interface("context", ctxData)
+			event.Interface("context", ctxData)
+		}
+	}
+	if l.ctxMapExt != nil {
+		if ctxData := l.ctxMapExt(ctx); len(ctxData) > 0 {
+			event.Interface("contextMap", ctxData)
 		}
 	}
 

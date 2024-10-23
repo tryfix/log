@@ -26,7 +26,7 @@ func (l *logParser) WithPrefix(p string, message interface{}) string {
 	return fmt.Sprintf("%s] [%+v", p, message)
 }
 
-//isLoggable checks whether it is possible to log in the given level under current configurations.
+// isLoggable checks whether it is possible to log in the given level under current configurations.
 func (l *logParser) isLoggable(level Level) bool {
 	return logTypes[level] <= logTypes[l.logLevel]
 }
@@ -74,6 +74,12 @@ func (l *logParser) logEntry(ctx context.Context, level Level, message interface
 		if ctxData := l.ctxExt(ctx); len(ctxData) > 0 {
 			format += " %v"
 			params = append(params, ctxData)
+		}
+		if l.ctxMapExt != nil {
+			if ctxData := l.ctxMapExt(ctx); len(ctxData) > 0 {
+				format += " %v"
+				params = append(params, ctxData)
+			}
 		}
 	}
 
